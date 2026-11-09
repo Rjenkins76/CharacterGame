@@ -31,9 +31,29 @@
         <div id="unity-build-title">Tales of the Lantern Road</div>
       </div>
     </div>
+    <div id="unity-launch-overlay" class="launch-overlay" role="dialog" aria-modal="true" aria-labelledby="launch-title">
+      <div class="launch-card">
+        <div class="launch-eyebrow">TALES OF THE LANTERN ROAD</div>
+        <h1 id="launch-title">Your story awaits</h1>
+        <p id="launch-description">Start the game in full screen for the best experience.</p>
+        <button id="unity-launch-button" type="button" disabled>Preparing the game…</button>
+        <div id="launch-note">The game will enter full screen after you start it.</div>
+      </div>
+    </div>
     <script>
       let canvas = document.querySelector("#unity-canvas");
       let fullscreenContainer = document.querySelector("#unity-fullscreen-container");
+      let unityInstance = null;
+      const launchOverlay = document.querySelector("#unity-launch-overlay");
+      const launchButton = document.querySelector("#unity-launch-button");
+      const launchDescription = document.querySelector("#launch-description");
+      const launchNote = document.querySelector("#launch-note");
+      const browserCanFullscreen = Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled || document.msFullscreenEnabled);
+
+      if (!browserCanFullscreen) {
+        launchDescription.textContent = "Start the game. This browser will keep it inside its window.";
+        launchNote.textContent = "Use your browser's full screen control if you want a larger view.";
+      }
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
@@ -137,7 +157,23 @@
           } else {
             loadingContainer.style.display = "none";
           }
-        }).then((unityInstance) => {
+        }).then((instance) => {
+                unityInstance = instance;
+                launchButton.disabled = false;
+                launchButton.textContent = browserCanFullscreen ? "ENTER FULL SCREEN" : "START GAME";
+                launchButton.focus();
+
+                // Fullscreen must be requested directly from a user gesture in modern browsers.
+                launchButton.onclick = () => {
+                  if (!unityInstance) return;
+                  try {
+                    unityInstance.SetFullscreen(1);
+                  } catch (error) {
+                    console.warn("The browser could not enter full screen:", error);
+                  }
+                  launchOverlay.style.display = "none";
+                };
+
                 document.querySelector("#unity-fullscreen-button").onclick = () => {
                   unityInstance.SetFullscreen(1);
                 };
